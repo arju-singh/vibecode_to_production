@@ -11,12 +11,14 @@ RUN npm ci --omit=dev
 # App source.
 COPY . .
 
-# SQLite data lives here — mount a volume to persist across restarts.
-RUN mkdir -p /app/data
-VOLUME ["/app/data"]
+# No data volume: payments live in Firestore, not on local disk. Cloud Run's
+# filesystem is ephemeral, which is exactly why the SQLite volume that used to
+# be here could not survive here.
 
-EXPOSE 3012
-ENV PORT=3012
+# Cloud Run injects PORT (8080) and server.js honours it; this default is only
+# for running the image locally.
+EXPOSE 8080
+ENV PORT=8080
 
 # Basic container healthcheck hitting /healthz.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

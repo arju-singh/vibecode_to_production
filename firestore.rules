@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Deny everything, deliberately and without exception.
+//
+// Nothing in this product uses the Firestore client SDK. Every read and write
+// goes through the Admin SDK on Cloud Run (server.js / lib/db.js), and the
+// Admin SDK bypasses these rules entirely — so locking this down costs the app
+// nothing and is not a placeholder to be loosened later.
+//
+// What it buys: the `payments` collection holds buyer emails, phone contacts,
+// full Razorpay payload blobs, and the `entitled` flag that IS the paywall. A
+// permissive rule here would expose customer PII to anyone with the project's
+// public web config, and a writable `entitled` would let a browser grant itself
+// the paid roadmap for free — the exact failure the server-side gate exists to
+// prevent.
+//
+// If a client-side feature is ever added, do NOT relax this to `allow read`.
+// Add a narrowly-scoped rule for that one collection instead.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

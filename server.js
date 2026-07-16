@@ -15,7 +15,7 @@ const express = require("express");
 const cors = require("cors");
 const Razorpay = require("razorpay");
 
-const { db, upsertPayment, getPayment, isPaid, claimReceiptSend, releaseReceiptSend } = require("./lib/db");
+const { upsertPayment, getPayment, isPaid, claimReceiptSend, releaseReceiptSend, listUpiClaims } = require("./lib/db");
 const { issueToken, verifyToken } = require("./lib/tokens");
 const { sendReceipt, MAIL_ENABLED } = require("./lib/email");
 
@@ -98,10 +98,18 @@ function buildUpiLink(ref) {
 // there first. Deliberately not awaited by request handlers: entitlement is
 // already granted by this point, so a slow or broken mail provider must not
 // delay the buyer's unlock or turn a successful payment into an error.
-function mailReceiptOnce(row, now) {
+// Fire-and-forget by design (see above), so it must swallow every error itself:
+// nothing awaits the returned promise, and an unhandled rejection here would
+// crash the process on a payment that has already succeeded.
+async function mailReceiptOnce(row, now) {
   if (!MAIL_ENABLED || !row?.email) return;
-  if (!claimReceiptSend(row.payment_id, now)) return; // someone else has it
-  sendReceipt({
+  try {
+    if (!(await claimReceiptSend(row.payment_id, now))) return; // someone else has it
+  } catch (e) {
+    console.error(`[mail] receipt claim failed for ${row.payment_id}: ${e?.message}`);
+    return;
+  }
+  return sendReceipt({
     paymentId: row.payment_id,
     orderId: row.order_id,
     amountPaise: row.amount,
@@ -187,7 +195,7 @@ app.use(
 // Razorpay webhook — MUST read the raw body to verify the
 // signature, so it is mounted BEFORE express.json().
 // ------------------------------------------------------------
-app.post("/api/webhook/razorpay", express.raw({ type: "*/*" }), (req, res) => {
+app.post("/api/webhook/razorpay", express.raw({ type: "*/*" }), async (req, res) => {
   if (!WEBHOOK_SECRET) {
     console.error("[webhook] received but RAZORPAY_WEBHOOK_SECRET is not configured");
     return res.status(503).json({ error: "Webhook not configured" });
@@ -222,26 +230,34 @@ app.post("/api/webhook/razorpay", express.raw({ type: "*/*" }), (req, res) => {
       entity.amount >= PRICE_PAISE &&
       entity.notes?.product === PRODUCT_ID;
 
-    const row = upsertPayment(
-      {
-        payment_id: entity.id,
-        order_id: entity.order_id,
-        amount: entity.amount,
-        currency: entity.currency,
-        status: entity.status, // 'captured' on payment.captured
-        email: entity.email || entity.notes?.email || null,
-        contact: entity.contact,
-        source: "webhook",
-        raw: entity,
-        entitled,
-      },
-      now
-    );
-    console.log(`[webhook] ${event.event} recorded for ${entity.id} (${entity.status}, entitled=${entitled})`);
-    // Only mail once the money is genuinely earned — never for an unentitled
-    // payment. This is the path that matters: it fires even if the buyer
-    // closed the tab before /api/verify-payment ran.
-    if (entitled) mailReceiptOnce(row, now);
+    try {
+      const row = await upsertPayment(
+        {
+          payment_id: entity.id,
+          order_id: entity.order_id,
+          amount: entity.amount,
+          currency: entity.currency,
+          status: entity.status, // 'captured' on payment.captured
+          email: entity.email || entity.notes?.email || null,
+          contact: entity.contact,
+          source: "webhook",
+          raw: entity,
+          entitled,
+        },
+        now
+      );
+      console.log(`[webhook] ${event.event} recorded for ${entity.id} (${entity.status}, entitled=${entitled})`);
+      // Only mail once the money is genuinely earned — never for an unentitled
+      // payment. This is the path that matters: it fires even if the buyer
+      // closed the tab before /api/verify-payment ran.
+      if (entitled) mailReceiptOnce(row, now);
+    } catch (e) {
+      // The write is the whole point of this endpoint, so a failed write must
+      // NOT be answered with 200 — that would tell Razorpay the event was
+      // handled and it would never retry, silently losing a captured payment.
+      console.error(`[webhook] FAILED to record ${entity.id}: ${e?.message}`);
+      return res.status(500).json({ ok: false });
+    }
   }
   // Always 200 quickly so Razorpay doesn't retry on our processing time.
   res.json({ ok: true });
@@ -282,7 +298,7 @@ app.use("/api/", rateLimit({ windowMs: 60 * 1000, max: 30, message: "Too many re
 // Auth middleware — extracts a valid token from the request.
 // Accepts  Authorization: Bearer <token>  or  ?token=<token>.
 // ------------------------------------------------------------
-function requireToken(req, res, next) {
+async function requireToken(req, res, next) {
   const header = req.headers.authorization || "";
   const bearer = header.startsWith("Bearer ") ? header.slice(7) : null;
   const credential = bearer || req.query.token;
@@ -298,13 +314,37 @@ function requireToken(req, res, next) {
   const claims = verifyToken(credential);
   if (!claims) return res.status(401).json({ ok: false, error: "Not authorized" });
   // Defence in depth: the payment the token was minted for must still be captured.
-  if (!isPaid(claims.pid)) return res.status(403).json({ ok: false, error: "Access revoked" });
+  // A Firestore outage must fail closed (503, no access), never fall through to next().
+  try {
+    if (!(await isPaid(claims.pid))) {
+      return res.status(403).json({ ok: false, error: "Access revoked" });
+    }
+  } catch (e) {
+    console.error(`[auth] entitlement check failed for ${claims.pid}: ${e?.message}`);
+    return res.status(503).json({ ok: false, error: "Try again" });
+  }
   req.claims = claims;
   next();
 }
 
 // Health check for load balancers / uptime monitors.
-app.get("/healthz", (_req, res) => res.json({ ok: true, ts: Date.now() }));
+// Two paths, deliberately.
+//
+// `/healthz` is kept for the Dockerfile HEALTHCHECK and local runs, which hit
+// it on localhost inside the container and reach Express normally.
+//
+// `/status` exists because Cloud Run's frontend RESERVES `/healthz`: a public
+// request to it is answered upstream with a 404 and never reaches this process
+// (verified — it produces a 404 carrying no `Server` header and leaves no entry
+// in the request log). An external uptime monitor pointed at /healthz would
+// therefore report this service as permanently down while it is perfectly
+// healthy. Point monitors at /status.
+//
+// /status is intentionally NOT under /api/, so monitor pings don't consume the
+// per-IP /api/ rate limit budget.
+const health = (_req, res) => res.json({ ok: true, ts: Date.now() });
+app.get("/healthz", health);
+app.get("/status", health);
 
 // Public config — only the KEY_ID (never the SECRET).
 app.get("/api/config", (_req, res) =>
@@ -328,6 +368,12 @@ function requireUpiEnabled(_req, res, next) {
   next();
 }
 
+// Express 4 does not catch rejections from async handlers — an unhandled one
+// would take the process down mid-payment. Every async route below is wrapped.
+function ah(fn) {
+  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization || "";
   const credential = header.startsWith("Bearer ") ? header.slice(7) : "";
@@ -338,10 +384,10 @@ function requireAdmin(req, res, next) {
 }
 
 // Payer asks for a link. Creates a pending, unentitled record.
-app.post("/api/upi/create", requireUpiEnabled, (_req, res) => {
+app.post("/api/upi/create", requireUpiEnabled, ah(async (_req, res) => {
   const ref = `upi_${crypto.randomBytes(6).toString("hex")}`;
   const now = Date.now();
-  upsertPayment(
+  await upsertPayment(
     {
       payment_id: ref,
       amount: PRICE_PAISE,
@@ -353,22 +399,22 @@ app.post("/api/upi/create", requireUpiEnabled, (_req, res) => {
     now
   );
   res.json({ ref, link: buildUpiLink(ref), amountPaise: PRICE_PAISE, vpa: UPI_VPA, payee: UPI_PAYEE_NAME });
-});
+}));
 
 // Payer reports the UTR after paying. This is a CLAIM, not proof.
-app.post("/api/upi/claim", requireUpiEnabled, (req, res) => {
+app.post("/api/upi/claim", requireUpiEnabled, ah(async (req, res) => {
   const ref = String(req.body?.ref || "").trim();
   const utr = String(req.body?.utr || "").trim();
   if (!/^upi_[a-f0-9]{12}$/.test(ref)) return res.status(400).json({ ok: false, error: "Invalid reference" });
   if (!/^[a-zA-Z0-9]{6,25}$/.test(utr)) {
     return res.status(400).json({ ok: false, error: "Enter the UPI reference / UTR from your payment app." });
   }
-  const row = getPayment(ref);
+  const row = await getPayment(ref);
   if (!row || row.source !== "upi") return res.status(404).json({ ok: false, error: "Unknown reference" });
   if (row.status === "captured") return res.json({ ok: true, status: "captured" });
 
   const now = Date.now();
-  upsertPayment(
+  await upsertPayment(
     {
       payment_id: ref,
       status: "claimed",
@@ -382,23 +428,21 @@ app.post("/api/upi/claim", requireUpiEnabled, (req, res) => {
   );
   console.log(`[upi] claim recorded: ${ref} utr=${utr} — awaiting manual approval`);
   res.json({ ok: true, status: "claimed" });
-});
+}));
 
 // Payer polls this. Returns a token ONLY once an admin has approved.
-app.get("/api/upi/status/:ref", requireUpiEnabled, (req, res) => {
+app.get("/api/upi/status/:ref", requireUpiEnabled, ah(async (req, res) => {
   const ref = String(req.params.ref || "");
   if (!/^upi_[a-f0-9]{12}$/.test(ref)) return res.status(400).json({ error: "Invalid reference" });
-  const row = getPayment(ref);
+  const row = await getPayment(ref);
   if (!row || row.source !== "upi") return res.status(404).json({ error: "Unknown reference" });
-  if (isPaid(ref)) return res.json({ status: "captured", token: issueToken(ref), payment_id: ref });
+  if (await isPaid(ref)) return res.json({ status: "captured", token: issueToken(ref), payment_id: ref });
   res.json({ status: row.status });
-});
+}));
 
 // --- Admin: review and approve. This is the manual work the fee buys away. ---
-app.get("/api/admin/upi", requireUpiEnabled, requireAdmin, (_req, res) => {
-  const rows = db
-    .prepare("SELECT payment_id, amount, status, entitled, raw, created_at, updated_at FROM payments WHERE source = 'upi' ORDER BY created_at DESC LIMIT 100")
-    .all();
+app.get("/api/admin/upi", requireUpiEnabled, requireAdmin, ah(async (_req, res) => {
+  const rows = await listUpiClaims(100);
   const out = rows.map((r) => {
     let utr = null;
     try { utr = r.raw ? JSON.parse(r.raw).utr || null : null; } catch {}
@@ -413,34 +457,34 @@ app.get("/api/admin/upi", requireUpiEnabled, requireAdmin, (_req, res) => {
     };
   });
   res.json({ ok: true, count: out.length, awaiting: out.filter((r) => r.status === "claimed").length, rows: out });
-});
+}));
 
-app.post("/api/admin/upi/approve", requireUpiEnabled, requireAdmin, (req, res) => {
+app.post("/api/admin/upi/approve", requireUpiEnabled, requireAdmin, ah(async (req, res) => {
   const ref = String(req.body?.ref || "").trim();
   if (!/^upi_[a-f0-9]{12}$/.test(ref)) return res.status(400).json({ ok: false, error: "Invalid reference" });
-  const row = getPayment(ref);
+  const row = await getPayment(ref);
   if (!row || row.source !== "upi") return res.status(404).json({ ok: false, error: "Unknown reference" });
 
-  upsertPayment(
+  await upsertPayment(
     { payment_id: ref, status: "captured", source: "upi", entitled: true },
     Date.now()
   );
   console.log(`[upi] APPROVED by admin: ${ref} (${row.contact || "no utr"}) — access granted`);
   res.json({ ok: true, ref, status: "captured" });
-});
+}));
 
-app.post("/api/admin/upi/reject", requireUpiEnabled, requireAdmin, (req, res) => {
+app.post("/api/admin/upi/reject", requireUpiEnabled, requireAdmin, ah(async (req, res) => {
   const ref = String(req.body?.ref || "").trim();
   if (!/^upi_[a-f0-9]{12}$/.test(ref)) return res.status(400).json({ ok: false, error: "Invalid reference" });
-  const row = getPayment(ref);
+  const row = await getPayment(ref);
   if (!row || row.source !== "upi") return res.status(404).json({ ok: false, error: "Unknown reference" });
   if (row.status === "captured") {
     return res.status(409).json({ ok: false, error: "Already approved — entitlement is not revoked here." });
   }
-  upsertPayment({ payment_id: ref, status: "failed", source: "upi", entitled: false }, Date.now());
+  await upsertPayment({ payment_id: ref, status: "failed", source: "upi", entitled: false }, Date.now());
   console.log(`[upi] rejected by admin: ${ref}`);
   res.json({ ok: true, ref, status: "failed" });
-});
+}));
 
 // Validate an existing token (front-end calls this on load to decide the gate).
 // Also reports what this buyer paid, so the access chip can render a receipt
@@ -448,16 +492,16 @@ app.post("/api/admin/upi/reject", requireUpiEnabled, requireAdmin, (req, res) =>
 // PRICE_PAISE: raising the price must never rewrite the receipt of someone who
 // bought at the old one — the same reasoning that made `entitled` a stored
 // column rather than a recomputed one.
-app.get("/api/session", requireToken, (req, res) => {
+app.get("/api/session", requireToken, ah(async (req, res) => {
   if (req.claims.admin) return res.json({ ok: true, admin: true });
-  const row = getPayment(req.claims.pid);
+  const row = await getPayment(req.claims.pid);
   res.json({
     ok: true,
     payment_id: req.claims.pid,
     // null for grandfathered rows that predate the amount column.
     amount_paise: Number.isFinite(row?.amount) ? row.amount : null,
   });
-});
+}));
 
 // Create a Razorpay order for the one fixed price this site sells at.
 // The client's amount is deliberately ignored: an amount supplied by the
@@ -534,7 +578,7 @@ app.post("/api/verify-payment", async (req, res) => {
     // Record it as pending-and-unentitled and let the payment.captured
     // webhook flip it; the payer retries via /api/restore a moment later.
     if (details.status === "authorized") {
-      upsertPayment(
+      await upsertPayment(
         {
           payment_id: razorpay_payment_id,
           order_id: razorpay_order_id,
@@ -562,7 +606,7 @@ app.post("/api/verify-payment", async (req, res) => {
       return res.status(400).json({ ok: false, error: `Payment is not captured (status: ${details.status}).` });
     }
 
-    const row = upsertPayment(
+    const row = await upsertPayment(
       {
         payment_id: razorpay_payment_id,
         order_id: razorpay_order_id,
@@ -589,14 +633,14 @@ app.post("/api/verify-payment", async (req, res) => {
 
 // Restore access on a new device/browser using a known payment id.
 // (No accounts by design — this is the "I paid, let me back in" path.)
-app.post("/api/restore", (req, res) => {
+app.post("/api/restore", ah(async (req, res) => {
   const paymentId = String(req.body?.payment_id || "").trim();
   if (!paymentId) return res.status(400).json({ ok: false, error: "payment_id required" });
-  if (!isPaid(paymentId)) {
+  if (!(await isPaid(paymentId))) {
     return res.status(404).json({ ok: false, error: "No captured payment found for that ID." });
   }
   res.json({ ok: true, token: issueToken(paymentId), payment_id: paymentId });
-});
+}));
 
 // Gated content — the actual paid roadmap. Served only with a valid token.
 app.get("/api/content/:name", requireToken, (req, res) => {

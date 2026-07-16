@@ -1,0 +1,20 @@
+# Intentionally empty.
+#
+# Firebase Hosting requires a `public` directory, but this app must NOT serve
+# its files from Hosting's CDN. Hosting serves whatever is in `public` BEFORE
+# consulting rewrites, so any file placed here is world-readable with no token
+# check.
+#
+# The paid roadmap under protected/ is gated by server.js, which checks a signed
+# access token on GET /api/content/:name and blocks sensitive paths from the
+# static handler. A blanket upload of the repo to Hosting would hand out
+# protected/data.js and protected/app.jsx to anyone who asked — the paywall
+# would be gone, which is the exact thing DEPLOY.md says this architecture
+# exists to prevent.
+#
+# So this directory stays empty and firebase.json rewrites ** to Cloud Run,
+# letting the Express server keep ownership of every route. The cost is that
+# static assets are served by Cloud Run rather than the CDN (slower, and they
+# bill as requests). If that ever matters, the fix is to serve ONLY the known
+# public assets from here (styles.css, boot.jsx, the legal pages) — never a
+# blanket upload of the repo.
