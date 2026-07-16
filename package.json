@@ -1,0 +1,20 @@
+{
+  "name": "vibe-coding-roadmap",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static roadmap site + minimal Express backend for Razorpay Standard Checkout.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --disable-warning=ExperimentalWarning server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "razorpay": "^2.9.4"
+  }
+}

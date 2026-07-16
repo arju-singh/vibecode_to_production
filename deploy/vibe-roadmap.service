@@ -1,0 +1,21 @@
+# systemd alternative to pm2.  Install:
+#   sudo cp deploy/vibe-roadmap.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now vibe-roadmap
+[Unit]
+Description=Vibe Coding Roadmap
+After=network.target
+
+[Service]
+Type=simple
+# Adjust user and path to where you deploy the app.
+User=www-data
+WorkingDirectory=/var/www/vibe-roadmap
+EnvironmentFile=/var/www/vibe-roadmap/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning server.js
+Restart=on-failure
+RestartSec=3
+# Persist the SQLite DB outside the deploy dir if you redeploy by replacing it.
+
+[Install]
+WantedBy=multi-user.target

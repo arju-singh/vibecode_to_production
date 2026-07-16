@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="x-apple-disable-message-reformatting" />
+<title>Your Vibe Coding Roadmap receipt</title>
+</head>
+<!--
+  Transactional receipt — Vibe Coding Roadmap.
+
+  Table-based and fully inline-styled on purpose: Outlook (Word engine) drops
+  flexbox/grid and most <style> rules. Webfonts don't load in most clients, so
+  the display face degrades to a system serif rather than breaking the layout.
+
+  The payment id is the point of this email. localStorage dies with the cache;
+  this inbox is the buyer's only durable copy and the sole input to /api/restore.
+  Keep it big, selectable, and above the fold.
+
+  Tokens: {{payment_id}} {{amount}} {{email}} {{order_id}} {{paid_at}} {{site_url}}
+-->
+<body style="margin:0; padding:0; background:#0A0A0B; -webkit-font-smoothing:antialiased;">
+
+  <!-- preheader: inbox preview line, never rendered in the body -->
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent; height:0; width:0;">
+    Payment received — ₹{{amount}}. Your payment ID is {{payment_id}}. Keep this email to restore access.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0A0A0B;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%; background:#0F0F11; border:1px solid #26262C; border-radius:14px; overflow:hidden;">
+
+          <!-- masthead -->
+          <tr>
+            <td style="padding:26px 32px 22px 32px; border-bottom:1px solid #26262C;">
+              <div style="font-family:'JetBrains Mono',ui-monospace,'SF Mono',monospace; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:#FF6B35;">
+                Vibe Coding Roadmap
+              </div>
+            </td>
+          </tr>
+
+          <!-- confirmation -->
+          <tr>
+            <td style="padding:34px 32px 0 32px;">
+              <div style="font-family:'JetBrains Mono',ui-monospace,'SF Mono',monospace; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#10B981; padding-bottom:12px;">
+                ✓ Payment received
+              </div>
+              <div style="font-family:'Instrument Serif',Georgia,'Times New Roman',serif; font-size:38px; line-height:1.1; color:#F5F0E8; letter-spacing:-0.4px;">
+                You're in for life.
+              </div>
+              <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.6; color:#B8B2A8; padding-top:14px;">
+                One payment, lifetime access — no subscription, no second payment, no expiry.
+                The full roadmap is unlocked and yours permanently.
+              </div>
+            </td>
+          </tr>
+
+          <!-- THE payment id. This is the whole reason the email exists. -->
+          <tr>
+            <td style="padding:28px 32px 0 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#141417; border:1px solid #FF6B35; border-radius:10px;">
+                <tr>
+                  <td style="padding:22px 24px;">
+                    <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#FF6B35; padding-bottom:10px;">
+                      Your payment ID — keep this email
+                    </div>
+                    <div style="font-family:'JetBrains Mono',ui-monospace,'SF Mono',monospace; font-size:20px; line-height:1.4; color:#F5F0E8; word-break:break-all; -webkit-user-select:all; user-select:all;">
+                      {{payment_id}}
+                    </div>
+                    <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; line-height:1.55; color:#B8B2A8; padding-top:12px;">
+                      There are no accounts and no password. If you clear your browser or switch
+                      device, this ID is how you get back in — that's why it's in your inbox and
+                      not just on screen.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- primary action (VML fallback keeps the button a button in Outlook) -->
+          <tr>
+            <td align="center" style="padding:26px 32px 0 32px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{site_url}}" style="height:48px;v-text-anchor:middle;width:536px;" arcsize="18%" stroke="f" fillcolor="#FF6B35">
+                <w:anchorlock/>
+                <center style="color:#0A0A0B;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Open the Roadmap →</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-- -->
+              <a href="{{site_url}}" style="display:block; background:#FF6B35; color:#0A0A0B; font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:15px; font-weight:700; text-decoration:none; text-align:center; padding:15px 20px; border-radius:9px;">
+                Open the Roadmap →
+              </a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <!-- restore instructions -->
+          <tr>
+            <td style="padding:30px 32px 0 32px;">
+              <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#6E6A63; padding-bottom:12px;">
+                If you ever lose access
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="26" valign="top" style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; color:#FF6B35; padding-bottom:9px;">1</td>
+                  <td valign="top" style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.5; color:#B8B2A8; padding-bottom:9px;">
+                    Go to <a href="{{site_url}}" style="color:#FF6B35; text-decoration:none;">the roadmap</a> and click <strong style="color:#F5F0E8; font-weight:600;">“Already paid? Restore access”</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="26" valign="top" style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; color:#FF6B35; padding-bottom:9px;">2</td>
+                  <td valign="top" style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.5; color:#B8B2A8; padding-bottom:9px;">
+                    Paste the payment ID above
+                  </td>
+                </tr>
+                <tr>
+                  <td width="26" valign="top" style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; color:#FF6B35;">3</td>
+                  <td valign="top" style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.5; color:#B8B2A8;">
+                    You're back in — on any device, as many times as you need
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- receipt detail -->
+          <tr>
+            <td style="padding:30px 32px 0 32px;">
+              <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#6E6A63; padding-bottom:10px;">
+                Receipt
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #26262C;">
+                <tr>
+                  <td style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#6E6A63; padding:11px 0; border-bottom:1px solid #1C1C21;">Item</td>
+                  <td align="right" style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#F5F0E8; padding:11px 0; border-bottom:1px solid #1C1C21;">The Vibe Coding Roadmap — lifetime access</td>
+                </tr>
+                <tr>
+                  <td style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#6E6A63; padding:11px 0; border-bottom:1px solid #1C1C21;">Amount paid</td>
+                  <td align="right" style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; color:#F5F0E8; padding:11px 0; border-bottom:1px solid #1C1C21;">₹{{amount}}</td>
+                </tr>
+                <tr>
+                  <td style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#6E6A63; padding:11px 0; border-bottom:1px solid #1C1C21;">Date</td>
+                  <td align="right" style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#B8B2A8; padding:11px 0; border-bottom:1px solid #1C1C21;">{{paid_at}}</td>
+                </tr>
+                <tr>
+                  <td style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#6E6A63; padding:11px 0; border-bottom:1px solid #1C1C21;">Order ID</td>
+                  <td align="right" style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; color:#B8B2A8; padding:11px 0; border-bottom:1px solid #1C1C21; word-break:break-all;">{{order_id}}</td>
+                </tr>
+                <tr>
+                  <td style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#6E6A63; padding:11px 0;">Billed to</td>
+                  <td align="right" style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:13px; color:#B8B2A8; padding:11px 0; word-break:break-all;">{{email}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- footer -->
+          <tr>
+            <td style="padding:28px 32px 30px 32px;">
+              <div style="border-top:1px solid #26262C; padding-top:18px;">
+                <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:12px; line-height:1.6; color:#6E6A63;">
+                  Questions or trouble getting in? Just reply to this email — it reaches a human.
+                </div>
+                <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:12px; line-height:1.6; color:#6E6A63; padding-top:12px;">
+                  <a href="{{site_url}}/terms" style="color:#6E6A63; text-decoration:underline;">Terms</a>
+                  &nbsp;·&nbsp;
+                  <a href="{{site_url}}/refund" style="color:#6E6A63; text-decoration:underline;">Refunds</a>
+                  &nbsp;·&nbsp;
+                  <a href="{{site_url}}/privacy" style="color:#6E6A63; text-decoration:underline;">Privacy</a>
+                </div>
+                <div style="font-family:'Inter Tight','Helvetica Neue',Arial,sans-serif; font-size:11px; line-height:1.6; color:#3F3D3A; padding-top:14px;">
+                  You're receiving this because you purchased the Vibe Coding Roadmap.
+                  This is a one-off transactional receipt, not marketing — there's nothing to unsubscribe from.
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
