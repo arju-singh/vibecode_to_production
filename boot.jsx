@@ -138,6 +138,7 @@ function RestoreBox() {
       <input
         className="gate-restore-input"
         placeholder="Your payment ID (pay_…)"
+        aria-label="Your payment ID to restore access"
         value={pid}
         onChange={(e) => setPid(e.target.value)}
       />
@@ -295,6 +296,7 @@ function UpiPay({ price, onPaid, onCancel }) {
       <input
         className="gate-restore-input"
         placeholder="UPI reference / UTR"
+        aria-label="UPI reference or UTR number from your payment app"
         value={utr}
         onChange={(e) => setUtr(e.target.value)}
         style={{ width: "100%", marginTop: 8 }}

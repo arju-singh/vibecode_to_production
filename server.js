@@ -156,6 +156,21 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1); // real client IP behind a proxy/load balancer
 
 // ------------------------------------------------------------
+// Baseline security headers. Firebase Hosting already adds HSTS;
+// these close the gaps it does not: clickjacking (X-Frame-Options),
+// MIME sniffing (X-Content-Type-Options), and referrer leakage.
+// No Content-Security-Policy here on purpose — the app transforms
+// JSX in the browser and loads React/Babel/Razorpay from CDNs, which
+// a strict CSP would break; tightening that is a separate task.
+// ------------------------------------------------------------
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
+// ------------------------------------------------------------
 // CORS — locked to configured origins. Same-origin browser
 // requests don't need CORS; this only matters if you embed the
 // API elsewhere. Set ALLOWED_ORIGINS=https://a.com,https://b.com

@@ -619,7 +619,7 @@ a { color: inherit; text-decoration: none; }
 
 .checklist {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
   gap: 12px;
 }
 .check-item {
@@ -680,7 +680,7 @@ a { color: inherit; text-decoration: none; }
 /* Incidents ----------------------------------------------------- */
 .incidents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 16px;
 }
 .incident {
@@ -2311,11 +2311,41 @@ a { color: inherit; text-decoration: none; }
 }
 .gate-restore{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
 .gate-restore-input{
-  padding:10px 12px;border:1px solid rgba(0,0,0,.2);border-radius:8px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg-2);color:var(--ink);
   font:inherit;font-size:14px;width:100%;box-sizing:border-box;
 }
+.gate-restore-input::placeholder{color:var(--ink-mute);}
+.gate-restore-input:focus{border-color:var(--line-2);background:var(--bg-3);outline:none;}
 .user-bar-signout{
   margin-left:8px;background:none;border:none;cursor:pointer;
   font-size:16px;opacity:.6;line-height:1;
 }
 .user-bar-signout:hover{opacity:1;}
+
+/* ---- Accessibility: keyboard focus + reduced motion (audit) ---- */
+/* A visible focus ring for keyboard users on every interactive control.
+   :focus-visible only shows for keyboard/AT navigation, not mouse clicks,
+   so it adds no visual noise for pointer users. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Honour the OS "reduce motion" setting: strip transitions, animations,
+   and smooth scrolling for users who are motion-sensitive. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
