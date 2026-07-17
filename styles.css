@@ -90,6 +90,7 @@ a { color: inherit; text-decoration: none; }
   border-right: 1px solid var(--line);
   padding: 28px 22px;
   background: rgba(10,10,11,0.7);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   z-index: 10;
   display: flex;
@@ -110,6 +111,20 @@ a { color: inherit; text-decoration: none; }
 .brand-name { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
 .brand-sub { font-size: 10px; color: var(--ink-mute); font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
 
+/* Mobile nav trigger + backdrop. Hidden on desktop; the media query below
+   reveals the button and turns .sidenav into a slide-in drawer under 1100px. */
+.nav-toggle {
+  display: none;
+  position: fixed; top: 14px; left: 14px; z-index: 70;
+  width: 44px; height: 44px; align-items: center; justify-content: center;
+  background: var(--bg-2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px;
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.nav-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 50; border: none;
+}
 .nav-list { display: flex; flex-direction: column; gap: 2px; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
@@ -511,7 +526,7 @@ a { color: inherit; text-decoration: none; }
 }
 .tool-card:hover { border-color: var(--orange); background: var(--bg-3); }
 .tool-card .nm { font-size: 13px; font-weight: 600; }
-.tool-card .ds { font-size: 11px; color: var(--ink-mute); margin-top: 2px; }
+.tool-card .ds { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
 .tool-card .px { font-family: var(--font-mono); font-size: 10px; color: var(--ink); margin-top: 6px; }
 
 .pitfall {
@@ -774,7 +789,18 @@ a { color: inherit; text-decoration: none; }
 /* Tweaks ------------------------------------------------------- */
 @media (max-width: 1100px) {
   .app { grid-template-columns: 1fr; }
-  .sidenav { display: none; }
+  /* Sidenav becomes a slide-in drawer (was display:none, leaving phones with no
+     section nav at all). The hamburger toggles .open. */
+  .nav-toggle { display: flex; }
+  .sidenav {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: min(300px, 82vw);
+    height: 100vh; overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 60;
+  }
+  .sidenav.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
   .section, .hero { padding: 60px 28px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
   .roadmap-shell { grid-template-columns: 1fr; }
@@ -829,7 +855,7 @@ a { color: inherit; text-decoration: none; }
   background: rgba(255,107,53,0.08);
 }
 .opt-label { font-size: 14px; font-weight: 500; }
-.opt-note { font-size: 12px; color: var(--ink-mute); margin-top: 4px; }
+.opt-note { font-size: 12px; color: var(--ink-dim); margin-top: 4px; }
 
 .picker-result {
   margin-top: 32px;
@@ -2030,6 +2056,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 999px;
   font-size: 12px;
   color: var(--ink-dim);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 32px rgba(0,0,0,0.5);
 }

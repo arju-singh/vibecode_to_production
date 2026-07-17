@@ -19,5 +19,11 @@
     "express": "^4.19.2",
     "firebase-admin": "^14.2.0",
     "razorpay": "^2.9.4"
+  },
+  "comments": {
+    "overrides": "firebase-admin 14 (latest) transitively pulls uuid <11.1.1 (GHSA-w5hq-g745-h8pq) via gaxios/teeny-request. Only uuid v4 is used there (not the vulnerable v3/v5/v6 buf path), but we pin uuid to a patched version to clear the advisory without the breaking firebase-admin downgrade npm audit fix would force."
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

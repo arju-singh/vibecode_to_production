@@ -235,7 +235,7 @@ const TRACK = [
 function Mindset() {
   const [open, setOpen] = useState(null);
   return (
-    <section className="section" id="mindset" data-screen-label="04 Mindset">
+    <section className="section" id="mindset">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">04 · The mindset</div>
@@ -296,7 +296,7 @@ function Mindset() {
 
 function Track() {
   return (
-    <section className="section" id="track" data-screen-label="13 30-Day Track">
+    <section className="section" id="track">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">13 · The 30-day track</div>

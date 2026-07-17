@@ -378,7 +378,7 @@ function ToolPicker() {
   const rec = allAnswered ? recommend(answers) : null;
 
   return (
-    <section className="section" id="picker" data-screen-label="03 Tool Picker">
+    <section className="section" id="picker">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">03 · Tool picker</div>
@@ -447,7 +447,7 @@ function ToolPicker() {
 function Prompting() {
   const [open, setOpen] = useState("01");
   return (
-    <section className="section" id="prompting" data-screen-label="06 Prompting Playbook">
+    <section className="section" id="prompting">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">06 · Prompting playbook</div>
@@ -495,7 +495,7 @@ function Prompting() {
 
 function CreditTrap() {
   return (
-    <section className="section" id="credits" data-screen-label="07 The Credit Trap">
+    <section className="section" id="credits">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">08 · The credit trap</div>
@@ -543,7 +543,7 @@ function CreditTrap() {
 
 function Handoff() {
   return (
-    <section className="section" id="handoff" data-screen-label="10 Hiring &amp; Handoff">
+    <section className="section" id="handoff">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">11 · Hiring &amp; handoff</div>
@@ -591,7 +591,7 @@ function Handoff() {
 
 function Glossary() {
   return (
-    <section className="section" id="further" data-screen-label="11 Glossary &amp; Resources">
+    <section className="section" id="further">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">14 · Going further</div>

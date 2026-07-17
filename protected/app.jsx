@@ -19,7 +19,7 @@ function keyActivate(fn) {
 // ---------- HERO ----------
 function Hero() {
   return (
-    <section className="hero" id="hero" data-screen-label="01 Hero">
+    <section className="hero" id="hero">
       <div className="hero-meta">
         <span>Field Guide · v1.0</span>
         <span>26 May 2026</span>
@@ -50,7 +50,7 @@ function Hero() {
 // ---------- ICEBERG ----------
 function Iceberg() {
   return (
-    <section className="section" id="iceberg" data-screen-label="02 The Iceberg">
+    <section className="section" id="iceberg">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">01 · The reality gap</div>
@@ -112,7 +112,7 @@ function Iceberg() {
 function Pyramid() {
   const [active, setActive] = useState(3);
   return (
-    <section className="section" id="tiers" data-screen-label="03 Tool Tiers">
+    <section className="section" id="tiers">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">02 · The tool stack</div>
@@ -190,7 +190,7 @@ function Roadmap() {
   }
 
   return (
-    <section className="section" id="roadmap" data-screen-label="04 The Roadmap">
+    <section className="section" id="roadmap">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">05 · The journey</div>
@@ -336,7 +336,7 @@ function Stacks() {
   const stack = STACKS.find(s => s.id === active);
 
   return (
-    <section className="section" id="stacks" data-screen-label="05 Recommended Stacks">
+    <section className="section" id="stacks">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">07 · Pick a stack</div>
@@ -418,7 +418,7 @@ function Checklist() {
   }
 
   return (
-    <section className="section" id="checklist" data-screen-label="06 Production Checklist">
+    <section className="section" id="checklist">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">09 · Pre-launch audit</div>
@@ -480,7 +480,7 @@ function Checklist() {
 // ---------- INCIDENTS ----------
 function Incidents() {
   return (
-    <section className="section" id="incidents" data-screen-label="07 Cautionary Tales">
+    <section className="section" id="incidents">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">10 · Cautionary tales</div>
@@ -518,7 +518,7 @@ function ToolIndex() {
   const tools = TOOL_INDEX.filter(t => filter === "All" || t.cat === filter);
 
   return (
-    <section className="section" id="tools" data-screen-label="08 Tool Index">
+    <section className="section" id="tools">
       <div className="section-head">
         <div className="section-title">
           <div className="kicker">12 · The full index</div>
@@ -569,7 +569,7 @@ function ToolIndex() {
 // ---------- OUTRO ----------
 function Outro() {
   return (
-    <section className="outro" id="outro" data-screen-label="09 Outro">
+    <section className="outro" id="outro">
       <div className="kicker" style={{marginBottom: 24}}>§ 15 / 15 · End of the map</div>
       <h2 className="display">
         Vibe coding got you to <em style={{color: 'var(--orange)', fontStyle: 'italic'}}>started</em>.<br/>
@@ -671,6 +671,7 @@ const NAV = [
 
 function SideNav() {
   const [active, setActive] = useState("hero");
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
@@ -688,10 +689,21 @@ function SideNav() {
   function go(id) {
     const el = document.getElementById(id);
     if (el) window.scrollTo({ top: el.offsetTop - 20, behavior: "smooth" });
+    setNavOpen(false); // collapse the mobile drawer after jumping to a section
   }
 
   return (
-    <aside className="sidenav">
+    <React.Fragment>
+      <button
+        className="nav-toggle"
+        aria-label={navOpen ? "Close navigation" : "Open navigation"}
+        aria-expanded={navOpen}
+        onClick={() => setNavOpen((o) => !o)}
+      >
+        {navOpen ? "✕" : "☰"}
+      </button>
+      {navOpen && <div className="nav-backdrop" onClick={() => setNavOpen(false)} />}
+    <aside className={"sidenav" + (navOpen ? " open" : "")}>
       <div className="brand">
         <div className="brand-mark"></div>
         <div>
@@ -720,6 +732,7 @@ function SideNav() {
         © 2026 · Field guide for<br/>builders past the demo.
       </div>
     </aside>
+    </React.Fragment>
   );
 }
 
