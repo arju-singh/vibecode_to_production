@@ -406,6 +406,10 @@ function PaymentLanding({ onPaid }) {
   return (
     <div className="landing">
       <div className="landing-left">
+        <div className="landing-brand">
+          <img className="landing-brand-mark" src="/assets/logo.png" alt="" width="72" height="70" />
+          <div className="landing-brand-word">VCTP</div>
+        </div>
         <div className="landing-meta"><span>Field Guide · v1.0</span><span>May 2026</span></div>
         <h1 className="landing-title">
           The Vibe Coding<br />Roadmap: from prompt<br />to <em>production-ready</em>.

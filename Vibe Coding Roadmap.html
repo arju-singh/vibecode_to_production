@@ -24,10 +24,20 @@
 <meta name="twitter:title" content="The Vibe Coding Roadmap — From Prompt to Production-Ready" />
 <meta name="twitter:description" content="Every tool, framework, and service to ship a vibe-coded app to production. One-time ₹499, lifetime access." />
 
+<!-- Icons. The .ico carries 16/32/48 for browsers that ignore the PNG hints.
+     apple-touch-icon is pre-flattened onto #0A0A0B: iOS discards alpha and
+     composites onto white, which would gut a dark-drawn mark. -->
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#0A0A0B" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
-<link rel="stylesheet" href="styles.css?v=23" />
+<link rel="stylesheet" href="styles.css?v=27" />
 </head>
 <body>
 <div id="root"></div>
@@ -41,6 +51,6 @@
 <!-- Only the public gate/loader ships to the page. The paid roadmap
      (data, sections, app) is fetched from /api/content/* with a valid
      token and injected by boot.jsx — never served as flat static. -->
-<script type="text/babel" src="boot.jsx?v=25"></script>
+<script type="text/babel" src="boot.jsx?v=26"></script>
 </body>
 </html>

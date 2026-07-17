@@ -101,9 +101,11 @@ a { color: inherit; text-decoration: none; }
 }
 .brand-mark {
   width: 28px; height: 28px;
-  background: conic-gradient(from 0deg, var(--orange), var(--rose), var(--plum), var(--ice), var(--orange));
+  /* The mascot is drawn on navy, so its darks are near-invisible against
+     --bg. The plate restores the contrast the artwork assumes. */
+  background: #202A39 url("/assets/favicon-48.png") center/contain no-repeat;
   border-radius: 8px;
-  filter: blur(0.3px);
+  flex: 0 0 28px;
 }
 .brand-name { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
 .brand-sub { font-size: 10px; color: var(--ink-mute); font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; }
@@ -1360,7 +1362,10 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink);
 }
 .landing-left {
-  padding: clamp(48px, 6vw, 88px);
+  /* Vertical padding is tighter than horizontal: the lockup made this column
+     taller than the viewport, and with justify-content:center the excess was
+     paid for twice — dead space up top, stats clipped off the bottom. */
+  padding: clamp(28px, 3.5vw, 48px) clamp(48px, 6vw, 88px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1368,6 +1373,40 @@ a { color: inherit; text-decoration: none; }
   background:
     radial-gradient(900px 600px at -10% 110%, rgba(255,107,53,0.10), transparent 60%),
     radial-gradient(700px 500px at 110% -10%, rgba(125,211,252,0.06), transparent 60%);
+}
+/* Brand lockup: mascot stacked over the wordmark, mirroring the original
+   artwork's arrangement. The wordmark keeps the source's silver-gradient,
+   wide-tracked treatment but is set in the site's own face. */
+.landing-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* stack centred on each other, as the source lockup does */
+  width: fit-content;    /* ...without stretching across the column */
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.landing-brand-mark {
+  width: 76px;
+  height: auto;
+  display: block;
+  /* The mascot is drawn on navy; on --bg its darks lose their edge. A soft
+     glow separates the silhouette without boxing it in a plate. */
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 1px rgba(201, 244, 98, 0.35));
+}
+.landing-brand-word {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.42em;
+  /* letter-spacing also trails the final P, so the glyphs sit left of the
+     box centre. Pull the phantom gap out of layout so centring is true. */
+  margin-right: -0.42em;
+  line-height: 1;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E4E7EA 42%, #8B939B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .landing-meta {
   display: flex; gap: 14px; flex-wrap: wrap;
