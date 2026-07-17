@@ -4,6 +4,18 @@
 
 const { useState, useEffect, useMemo, useRef } = React;
 
+// Keyboard operability for the div/li controls in this file. They keep their
+// existing CSS (so layout is unchanged) but gain role + tabIndex + this handler,
+// so Enter/Space activate them exactly like a native button/checkbox would.
+function keyActivate(fn) {
+  return (e) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      fn();
+    }
+  };
+}
+
 // ---------- HERO ----------
 function Hero() {
   return (
@@ -120,7 +132,11 @@ function Pyramid() {
             key={t.n}
             className={"tier" + (active === t.n ? " active" : "")}
             data-t={t.n}
+            role="button"
+            tabIndex={0}
+            aria-expanded={active === t.n}
             onClick={() => setActive(active === t.n ? null : t.n)}
+            onKeyDown={keyActivate(() => setActive(active === t.n ? null : t.n))}
           >
             <div className="tier-num">T{t.n}</div>
             <div className="tier-meta">
@@ -193,7 +209,11 @@ function Roadmap() {
             <div
               key={s.id}
               className={"tl-step" + (active === s.id ? " active" : "")}
+              role="button"
+              tabIndex={0}
+              aria-pressed={active === s.id}
               onClick={() => setActive(s.id)}
+              onKeyDown={keyActivate(() => setActive(s.id))}
             >
               <div className="tl-stage">Stage {s.stage}</div>
               <div className="tl-name">{s.name}</div>
@@ -230,7 +250,11 @@ function Roadmap() {
                     <li
                       key={i}
                       className={"todo-item" + (isDone ? " done" : "")}
+                      role="checkbox"
+                      aria-checked={isDone}
+                      tabIndex={0}
                       onClick={() => toggle(key)}
+                      onKeyDown={keyActivate(() => toggle(key))}
                     >
                       <span className="todo-box">{isDone && <span style={{fontSize: 11, lineHeight: 1}}>✓</span>}</span>
                       <span className="todo-text"><strong>{d.t}.</strong> {d.d}</span>
@@ -253,7 +277,11 @@ function Roadmap() {
                     <li
                       key={i}
                       className={"todo-item" + (isDone ? " done" : "")}
+                      role="checkbox"
+                      aria-checked={isDone}
+                      tabIndex={0}
                       onClick={() => toggle(key)}
+                      onKeyDown={keyActivate(() => toggle(key))}
                     >
                       <span className="todo-box">{isDone && <span style={{fontSize: 11, lineHeight: 1}}>✓</span>}</span>
                       <span className="todo-text">{d}</span>
@@ -326,7 +354,11 @@ function Stacks() {
           <div
             key={s.id}
             className={"stack-tab" + (active === s.id ? " active" : "")}
+            role="button"
+            tabIndex={0}
+            aria-pressed={active === s.id}
             onClick={() => setActive(s.id)}
+            onKeyDown={keyActivate(() => setActive(s.id))}
           >
             {s.persona}
           </div>
@@ -411,7 +443,11 @@ function Checklist() {
           <div
             key={c.id}
             className={"check-cat" + (cat === c.id ? " active" : "")}
+            role="button"
+            tabIndex={0}
+            aria-pressed={cat === c.id}
             onClick={() => setCat(c.id)}
+            onKeyDown={keyActivate(() => setCat(c.id))}
           >
             {c.name}<span className="cnt">{counts[c.id]}</span>
           </div>
@@ -423,7 +459,7 @@ function Checklist() {
           const key = CHECKLIST.indexOf(c);
           const isDone = !!done[key];
           return (
-            <div key={key} className={"check-item" + (isDone ? " done" : "")} onClick={() => toggle(key)}>
+            <div key={key} className={"check-item" + (isDone ? " done" : "")} role="checkbox" aria-checked={isDone} tabIndex={0} onClick={() => toggle(key)} onKeyDown={keyActivate(() => toggle(key))}>
               <div className="check-box">{isDone && <span style={{fontSize: 14, lineHeight: 1}}>✓</span>}</div>
               <div className="check-body">
                 <div className="check-title">{c.t}</div>
@@ -500,7 +536,11 @@ function ToolIndex() {
           <div
             key={c}
             className={"check-cat" + (filter === c ? " active" : "")}
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === c}
             onClick={() => setFilter(c)}
+            onKeyDown={keyActivate(() => setFilter(c))}
           >
             {c}
           </div>
@@ -664,7 +704,11 @@ function SideNav() {
           <div
             key={n.id}
             className={"nav-item" + (active === n.id ? " active" : "")}
+            role="button"
+            tabIndex={0}
+            aria-current={active === n.id ? "true" : undefined}
             onClick={() => go(n.id)}
+            onKeyDown={keyActivate(() => go(n.id))}
           >
             <span className="nav-num">{n.num}</span>
             <span>{n.label}</span>

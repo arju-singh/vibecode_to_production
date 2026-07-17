@@ -89,10 +89,8 @@ async function loadRoadmap(token) {
   for (const name of PROTECTED_FILES) {
     const res = await fetch(`/api/content/${name}`, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Failed to load ${name} (${res.status})`);
-    let code = await res.text();
-    if (name.endsWith(".jsx")) {
-      code = Babel.transform(code, { presets: ["react"], filename: name }).code;
-    }
+    // Already compiled to plain JS server-side — just execute it.
+    const code = await res.text();
     _runInGlobalScope(code);
   }
   if (typeof window.__renderRoadmap !== "function") {

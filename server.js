@@ -10,10 +10,12 @@
 require("dotenv").config();
 
 const path = require("path");
+const fs = require("fs");
 const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const Razorpay = require("razorpay");
+const babel = require("@babel/core");
 
 const { upsertPayment, getPayment, isPaid, claimReceiptSend, releaseReceiptSend, listUpiClaims } = require("./lib/db");
 const { issueToken, verifyToken } = require("./lib/tokens");
@@ -150,6 +152,42 @@ const PROTECTED_DIR = path.join(__dirname, "protected");
 
 // Files the authenticated content loader is allowed to fetch, in load order.
 const PROTECTED_FILES = ["data.js", "sections-v2.jsx", "sections-v3.jsx", "app.jsx", "mount.jsx"];
+
+// ------------------------------------------------------------
+// Server-side JSX compile. The app used to ship @babel/standalone
+// (~2.5 MB) to every visitor and transform JSX in the browser on
+// each load. Instead, compile every .jsx ONCE here at startup with
+// the React preset (classic runtime — React stays a global, so the
+// injected classic <script> semantics are unchanged) and cache the
+// result. Plain .js files pass through untouched.
+// ------------------------------------------------------------
+function compileJsx(filename, code) {
+  if (!filename.endsWith(".jsx")) return code;
+  const out = babel.transform(code, {
+    presets: ["@babel/preset-react"],
+    filename,
+    babelrc: false,
+    configFile: false,
+  });
+  return out.code;
+}
+
+// Compile the paid bundle and the public boot loader at boot. A failure here
+// is intentionally fatal: better to fail the deploy than to serve a half-
+// compiled bundle to a paying customer. Reading synchronously at startup is
+// fine — it happens once, before the server accepts a single request.
+const CONTENT_CACHE = new Map();
+let BOOT_JS;
+try {
+  for (const name of PROTECTED_FILES) {
+    const src = fs.readFileSync(path.join(PROTECTED_DIR, name), "utf8");
+    CONTENT_CACHE.set(name, compileJsx(name, src));
+  }
+  BOOT_JS = compileJsx("boot.jsx", fs.readFileSync(path.join(__dirname, "boot.jsx"), "utf8"));
+} catch (e) {
+  console.error(`FATAL: could not compile the frontend bundle at startup: ${e?.message}`);
+  process.exit(1);
+}
 
 const app = express();
 app.disable("x-powered-by");
@@ -365,6 +403,15 @@ app.get("/status", health);
 app.get("/api/config", (_req, res) =>
   res.json({ keyId: KEY_ID, amountPaise: PRICE_PAISE, upi: UPI_ENABLED })
 );
+
+// Public boot loader — the JSX gate/loader, compiled to plain JS at startup and
+// served as a normal script (no in-browser Babel). Public by design: it is the
+// only app code an unpaid visitor runs.
+app.get("/boot.js", (_req, res) => {
+  res.type("application/javascript");
+  res.setHeader("Cache-Control", "no-cache");
+  res.send(BOOT_JS);
+});
 
 // ------------------------------------------------------------
 // Direct-UPI endpoints. All of them 404 unless UPI_ENABLED.
@@ -659,11 +706,11 @@ app.post("/api/restore", ah(async (req, res) => {
 
 // Gated content — the actual paid roadmap. Served only with a valid token.
 app.get("/api/content/:name", requireToken, (req, res) => {
-  const name = req.params.name;
-  if (!PROTECTED_FILES.includes(name)) return res.status(404).json({ error: "Unknown resource" });
+  const compiled = CONTENT_CACHE.get(req.params.name);
+  if (compiled === undefined) return res.status(404).json({ error: "Unknown resource" });
   res.setHeader("Cache-Control", "no-store");
-  res.type("text/plain"); // delivered as text; the client transforms/executes it
-  res.sendFile(path.join(PROTECTED_DIR, name));
+  res.type("application/javascript"); // pre-compiled JS; the client executes it as-is
+  res.send(compiled);
 });
 
 // ------------------------------------------------------------

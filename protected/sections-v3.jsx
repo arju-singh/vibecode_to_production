@@ -254,7 +254,11 @@ function Mindset() {
           <div
             key={m.n}
             className={"mindset-card" + (open === m.n ? " open" : "")}
+            role="button"
+            tabIndex={0}
+            aria-expanded={open === m.n}
             onClick={() => setOpen(open === m.n ? null : m.n)}
+            onKeyDown={keyActivate(() => setOpen(open === m.n ? null : m.n))}
           >
             <div className="m-head">
               <div className="m-num">{m.n}</div>

@@ -399,7 +399,11 @@ function ToolPicker() {
                 <div
                   key={o.v}
                   className={"picker-opt" + (answers[q.id] === o.v ? " active" : "")}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={answers[q.id] === o.v}
                   onClick={() => setAnswers(a => ({...a, [q.id]: o.v}))}
+                  onKeyDown={keyActivate(() => setAnswers(a => ({...a, [q.id]: o.v})))}
                 >
                   <div className="opt-label">{o.l}</div>
                   <div className="opt-note">{o.note}</div>
@@ -461,7 +465,11 @@ function Prompting() {
           <div
             key={p.n}
             className={"prompt-card" + (open === p.n ? " open" : "")}
+            role="button"
+            tabIndex={0}
+            aria-expanded={open === p.n}
             onClick={() => setOpen(open === p.n ? null : p.n)}
+            onKeyDown={keyActivate(() => setOpen(open === p.n ? null : p.n))}
           >
             <div className="prompt-head">
               <div className="prompt-n">{p.n}</div>
