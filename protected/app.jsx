@@ -588,10 +588,25 @@ function Outro() {
 
 // ---------- FOOTER ----------
 function Footer() {
+  const EMAIL = "connect@arjusingh.com";
   const subject = encodeURIComponent("Bug report — Vibe Coding Roadmap");
   const body = encodeURIComponent(
     "What happened:\n\n\nWhat I expected:\n\n\nBrowser / device:\n\n"
   );
+  const [copied, setCopied] = useState("");
+
+  // mailto: only does anything when the visitor has a default mail app.
+  // On desktop Chrome without one, the click silently fails — so we also
+  // copy the address to the clipboard and confirm, making support reachable
+  // regardless of mail-client setup. The href stays so mail apps still open.
+  function copyEmail(which) {
+    if (!navigator.clipboard) return; // let the mailto href do its thing
+    navigator.clipboard.writeText(EMAIL).then(() => {
+      setCopied(which);
+      setTimeout(() => setCopied(""), 2200);
+    }).catch(() => {});
+  }
+
   return (
     <footer className="site-footer" id="footer">
       <div className="footer-grid">
@@ -607,8 +622,13 @@ function Footer() {
         </div>
         <div className="footer-col">
           <div className="footer-h">Support</div>
-          <a href="mailto:connect@arjusingh.com">Contact support</a>
-          <a href={`mailto:connect@arjusingh.com?subject=${subject}&body=${body}`}>Report a bug</a>
+          <a href={`mailto:${EMAIL}`} onClick={() => copyEmail("contact")}>
+            {copied === "contact" ? "Email copied ✓" : "Contact support"}
+          </a>
+          <a href={`mailto:${EMAIL}?subject=${subject}&body=${body}`} onClick={() => copyEmail("bug")}>
+            {copied === "bug" ? "Email copied ✓" : "Report a bug"}
+          </a>
+          <a className="footer-email" href={`mailto:${EMAIL}`}>{EMAIL}</a>
         </div>
       </div>
       <div className="footer-base">
