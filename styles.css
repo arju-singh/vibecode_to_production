@@ -1465,6 +1465,18 @@ a { color: inherit; text-decoration: none; }
   gap: 40px;
   flex-wrap: wrap;
 }
+.landing-contact {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  margin: 32px 0 0;
+}
+.landing-contact a {
+  color: var(--orange);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 107, 53, 0.4);
+}
+.landing-contact a:hover { border-bottom-color: var(--orange); }
 
 .landing-right {
   display: grid;

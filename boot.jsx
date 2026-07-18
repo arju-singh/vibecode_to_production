@@ -423,6 +423,11 @@ function PaymentLanding({ onPaid }) {
           <div className="stat"><div className="stat-val">8<span className="unit">stages</span></div><div className="stat-label">From idea to ship</div></div>
           <div className="stat"><div className="stat-val">27<span className="unit">items</span></div><div className="stat-label">Production checklist</div></div>
         </div>
+        <p className="landing-contact">
+          Questions before you buy? Email{" "}
+          <a href="mailto:connect@arjusingh.com?subject=Question%20about%20the%20Vibe%20Coding%20Roadmap">connect@arjusingh.com</a>
+          {" "}for more details.
+        </p>
       </div>
       <div className="landing-right">
         <div className="gate-card landing-gate-card">
