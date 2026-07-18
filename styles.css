@@ -1949,7 +1949,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--ink-mute);
+  color: var(--ink-dim); /* was --ink-mute (3.44:1); --ink-dim clears WCAG 4.5:1 */
 }
 
 .pay-progress {

@@ -36,22 +36,29 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- The React runtime (unpkg) and Razorpay SDK load from these hosts; warming
+     the connection early shaves the LCP wait for the client-rendered hero. -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
+<link rel="preconnect" href="https://checkout.razorpay.com" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
-<link rel="stylesheet" href="styles.css?v=29" />
+<link rel="stylesheet" href="styles.css?v=30" />
 </head>
 <body>
 <div id="root"></div>
 
 <!-- Production React (minified). JSX is compiled server-side at startup, so the
      browser no longer downloads @babel/standalone (~2.5 MB) or a dev React build. -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<!-- defer: execute in document order after parsing, so none of these block the
+     first paint of the hero. React → ReactDOM → Razorpay → boot.js order is
+     preserved (defer keeps order), and boot.js still sees the globals it needs. -->
+<script defer src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script defer src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
 
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <!-- Only the public gate/loader ships to the page. The paid roadmap
      (data, sections, app) is fetched from /api/content/* with a valid
      token and injected by boot.js — never served as flat static. -->
-<script src="/boot.js"></script>
+<script defer src="/boot.js"></script>
 </body>
 </html>
